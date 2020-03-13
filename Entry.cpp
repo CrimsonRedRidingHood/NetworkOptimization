@@ -127,7 +127,7 @@ int main()
 {
 	Network<Pos, Agent, DoNeighbor, int, CalculateDistance, PosComp> network;
 	
-	const int player1AgentsNumber = 9;
+	const int player1AgentsNumber = 10;
 	const int player2AgentsNumber = 11;
 
 	/*
@@ -138,7 +138,7 @@ int main()
 	int player1Pos[player1AgentsNumber][2] = {
 		{1,1},{2,1},{2,2},
 		{2,3},{2,4},{3,4},
-		{4,4},{4,3},{4,2}
+		{4,4},{4,3},{4,2},{5,2}
 	};
 
 	int player2Pos[player2AgentsNumber][2] = {
@@ -210,7 +210,7 @@ int main()
 	Agent * player1Drone = new Agent(0x11);
 	Agent * player2Drone = new Agent(0x12);
 
-	map<pair<int, int>, set<pair<Pos, Pos>>> paretoOptimal;
+	map<int, set<pair<Pos, Pos>>> paretoOptimal;
 
 	for (int i = 0; i < candidates.size(); i++)
 	{
@@ -269,43 +269,23 @@ int main()
 				*/
 
 				// seeking Pareto optimal solutions
-				pair<int, int> newSolution = make_pair(player1Gain, player2Gain);
+				int newResult = player1Gain + player2Gain;
 
-				bool goesInside = true;
-
-				for (
-					map<pair<int, int>, set<pair<Pos, Pos>>>::iterator iter = paretoOptimal.begin();
-					iter != paretoOptimal.end();
-					)
+				if (paretoOptimal.size() != 0)
 				{
-					int checkAgainstPlayer1Gain = iter->first.first;
-					int checkAgainstPlayer2Gain = iter->first.second;
+					if (paretoOptimal.begin()->first <= newResult)
+					{
+						if (paretoOptimal.begin()->first < newResult)
+						{
+							paretoOptimal.clear();
+						}
 
-					if (player1Gain == checkAgainstPlayer1Gain && player2Gain == checkAgainstPlayer2Gain)
-					{
-						iter++;
-						continue;
-					}
-
-					if (player1Gain <= checkAgainstPlayer1Gain && player2Gain <= checkAgainstPlayer2Gain)
-					{
-						goesInside = false;
-						break;
-					}
-
-					if (!(player1Gain >= checkAgainstPlayer1Gain && player2Gain >= checkAgainstPlayer2Gain))
-					{
-						iter++;
-					}
-					else
-					{
-						iter = paretoOptimal.erase(iter);
+						paretoOptimal[newResult].insert(make_pair(player1Drone->position, player2Drone->position));
 					}
 				}
-
-				if (goesInside)
+				else
 				{
-					paretoOptimal[newSolution].insert(make_pair(candidates[i], candidates[j]));
+					paretoOptimal[newResult].insert(make_pair(player1Drone->position, player2Drone->position));
 				}
 
 				network.Remove(candidates[i], player1Drone);
@@ -317,7 +297,7 @@ int main()
 	double bestPageRank = 0.0;
 	pair<Pos, Pos> solution;
 
-	for (map<pair<int, int>, set<pair<Pos, Pos>>>::iterator iter = paretoOptimal.begin(); iter != paretoOptimal.end(); iter++)
+	for (map<int, set<pair<Pos, Pos>>>::iterator iter = paretoOptimal.begin(); iter != paretoOptimal.end(); iter++)
 	{
 		for (set<pair<Pos, Pos>>::iterator setiter = iter->second.begin(); setiter != iter->second.end(); setiter++)
 		{
