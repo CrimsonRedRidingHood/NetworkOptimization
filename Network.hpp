@@ -45,6 +45,10 @@ class Network
 private:
 	int agentsCount = 0;
 
+	/*
+	 * This subclass is used to store network 
+	 * agents information.
+	 */
 	class NetworkAgentData
 	{
 	public:
@@ -730,6 +734,79 @@ public:
 		return diameter;
 	}
 
+	void GenerateAdjacencyMatrix(function<bool(TAgent)> filter, vector<vector<double>>& buffer, vector<TAgent*>& indexedAgents)
+	{
+		buffer.resize(agentsCount);
+
+		if (agentsCount == 0)
+		{
+			return;
+		}
+
+		for (int i = 0; i < agentsCount; i++)
+		{
+			buffer[i].resize(agentsCount, 0.0);
+		}
+
+		NetworkAgentData* root = FindFirst(filter);
+
+		int subgraphsize = 0;
+		map<NetworkAgentData*, int> agentsToIndicesMapping;
+
+		queue<NetworkAgentData*> bfsQueue;
+
+		agentsToIndicesMapping[root] = subgraphsize;
+		subgraphsize++;
+		bfsQueue.push(root);
+
+		indexedAgents.push_back(root->agent);
+
+		while (!bfsQueue.empty())
+		{
+			NetworkAgentData* current = bfsQueue.front();
+			bfsQueue.pop();
+
+			int currentFilteredNeighbors = 0;
+
+			for (
+				set<NetworkAgentData*>::iterator neighbors = current->neighbors.begin();
+				neighbors != current->neighbors.end();
+				neighbors++
+				)
+			{
+				NetworkAgentData* currentNeighbor = *neighbors;
+
+				if (!filter(*(currentNeighbor->agent)))
+				{
+					continue;
+				}
+
+				currentFilteredNeighbors++;
+
+				// this condition is true if we've never met the agent before
+				if (agentsToIndicesMapping.find(currentNeighbor) == agentsToIndicesMapping.end())
+				{
+					agentsToIndicesMapping[currentNeighbor] = subgraphsize;
+					subgraphsize++;
+					bfsQueue.push(currentNeighbor);
+
+					indexedAgents.push_back(currentNeighbor->agent);
+				}
+				// now we're sure that currentNeighbor has an index mapped to it
+
+				// since these guys are neighbors, we set the value to 1.0
+				buffer[agentsToIndicesMapping[currentNeighbor]][agentsToIndicesMapping[current]] = 1.0;
+			}
+		}
+
+		for (int i = 0; i < buffer.size(); i++)
+		{
+			buffer[i].resize(subgraphsize);
+		}
+
+		buffer.resize(subgraphsize);
+	}
+
 	vector<pair<TAgent*, double>> GetPageRank(function<bool(TAgent)> filter, function<bool(TAgent)> findFirstFilter)
 	{
 		vector<pair<TAgent*, double>> result;
@@ -807,12 +884,8 @@ public:
 			return result;
 		}
 
-		//vector<int> inversions;
-
 		for (int i = 0; i < subgraphsize; i++)
 		{
-			//inversions.push_back(i);
-
 			ranks[i][i] = -1.0;
 
 			for (int j = 0; j < subgraphsize; j++)
@@ -823,8 +896,6 @@ public:
 				}
 			}
 		}
-
-		//reverse(ranks.begin(), ranks.begin()+subgraphsize);
 
 		result.resize(subgraphsize);
 		for (
@@ -856,15 +927,7 @@ public:
 
 		return result;
 	}
-	/*
-	void Test()
-	{
-		Iterator it = BeginIterator();
 
-		while( it != EndIterator() )
-			cout << it->neighbors.size() << endl;
-	}
-	*/
 	Network() {}
 };
 

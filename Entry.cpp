@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -95,57 +96,34 @@ public:
 	}
 };
 
-template<class _T>
-class IBase
-{
-public:
-	virtual ~IBase() {};
-	virtual _T GetData() = 0;
-	virtual bool Comp(IBase& another) = 0;
-};
-
-template<class _T>
-class Inherited : public IBase<_T>
-{
-public:
-	~Inherited() {}
-
-	_T GetData()
-	{
-		return 4;
-	}
-
-	bool Comp(IBase<_T>& another)
-	{
-		_T data = this->GetData();
-		_T anotherdata = another.GetData();
-		return data == anotherdata;
-	}
-};
-
 int main()
 {
 	Network<Pos, Agent, DoNeighbor, int, CalculateDistance, PosComp> network;
 	
-	const int player1AgentsNumber = 10;
-	const int player2AgentsNumber = 11;
+	const int player1AgentsNumber = 8;
+	const int player2AgentsNumber = 8;
 
-	/*
-		It's much more convenient to fill up
-		a 2-D array than to call constructor
-		functions a lot of times with different arguments
-	*/
 	int player1Pos[player1AgentsNumber][2] = {
+		/*
 		{1,1},{2,1},{2,2},
 		{2,3},{2,4},{3,4},
 		{4,4},{4,3},{4,2},{5,2}
+		*/
+		{2,1},{2,2},{3,2},
+		{3,3},{4,2},{4,3},
+		{5,3},{6,3}
 	};
 
 	int player2Pos[player2AgentsNumber][2] = {
+		/*
 		{3,5},{4,5},{5,5},
 		{6,5},{4,4},{4,3},
 		{4,2},{5,2},{6,2},
 		{7,2},{8,2}
+		*/
+		{1,4},{1,5},{2,5},
+		{3,5},{3,6},{4,5},
+		{4,4},{4,3}
 	};
 
 	Agent ** player1Agents = new Agent*[player1AgentsNumber];
@@ -268,7 +246,7 @@ int main()
 					this set of positions is valuable or not
 				*/
 
-				// seeking Pareto optimal solutions
+				// finding Pareto optimal solutions
 				int newResult = player1Gain + player2Gain;
 
 				if (paretoOptimal.size() != 0)
@@ -335,6 +313,57 @@ int main()
 		}
 	}
 
+	player1Drone->position = solution.first;
+	player2Drone->position = solution.second;
+
+	network.Add(solution.first, player1Drone);
+	network.Add(solution.second, player2Drone);
+
+	ofstream outfile("output.txt");
+
+	vector<vector<double>> adjMatrix;
+	vector<Agent*> indexedAgents;
+
+	const int numberOfPlayers = 2;
+
+	outfile << numberOfPlayers << endl;
+
+	for (int playerNumber = 1; playerNumber <= numberOfPlayers; playerNumber++)
+	{
+		network.GenerateAdjacencyMatrix(
+			[playerNumber](Agent x) {return ((x.playerID == playerNumber) || ((x.playerID & 0x10) != 0));},
+			adjMatrix,
+			indexedAgents
+		);
+
+		outfile << indexedAgents.size() << endl;
+
+		for (int i = 0; i < indexedAgents.size(); i++)
+		{
+			outfile << indexedAgents[i]->position.i << " " << indexedAgents[i]->position.j << " " << indexedAgents[i]->playerID << endl;
+		}
+
+		for (int i = 0; i < adjMatrix.size(); i++)
+		{
+			for (int j = 0; j < adjMatrix.size(); j++)
+			{
+				outfile << adjMatrix[i][j] << " ";
+			}
+
+			outfile << endl;
+		}
+
+		indexedAgents.clear();
+
+		for (int i = 0; i < adjMatrix.size(); i++)
+		{
+			adjMatrix[i].clear();
+		}
+		adjMatrix.clear();
+	}
+
+	outfile.close();
+
 	delete player1Drone;
 	delete player2Drone;
 
@@ -355,6 +384,8 @@ int main()
 
 	cout << "(" << solution.first.i << ", " << solution.first.j << ") (" <<
 		solution.second.i << ", " << solution.second.j << ")" << endl;
+
+	cout << "Press Enter to quit...";
 
 	fgetc( stdin );
 	

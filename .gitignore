@@ -388,3 +388,7 @@ MigrationBackup/
 
 *.vcxproj*
 *.sln
+
+# output files
+
+output.txt
