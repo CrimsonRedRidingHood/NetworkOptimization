@@ -1,4 +1,5 @@
 #include "Network.hpp"
+#include "Visualization.hpp"
 
 #include <map>
 #include <set>
@@ -6,6 +7,8 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+
+#include "ManetDefs.h"
 
 using namespace std;
 
@@ -42,7 +45,7 @@ public:
 class PosComp
 {
 public:
-	bool operator()(const Pos& lhs, const Pos& rhs)
+	bool operator()(const Pos& lhs, const Pos& rhs) const
 	{
 		return (lhs.i < rhs.i) || ((lhs.i == rhs.i) && (lhs.j < rhs.j));
 	}
@@ -71,7 +74,7 @@ public:
 class DoNeighbor
 {
 public:
-	bool operator()(const Agent& lhs, const Agent& rhs)
+	bool operator()(const Agent& lhs, const Agent& rhs) const
 	{
 		int idist = abs(lhs.position.i - rhs.position.i);
 		int jdist = abs(lhs.position.j - rhs.position.j);
@@ -88,7 +91,7 @@ public:
 class CalculateDistance
 {
 public:
-	int operator()(const Agent& lhs, const Agent& rhs)
+	int operator()(const Agent& lhs, const Agent& rhs) const
 	{
 		int idist = abs(lhs.position.i - rhs.position.i);
 		int jdist = abs(lhs.position.j - rhs.position.j);
@@ -96,12 +99,145 @@ public:
 	}
 };
 
+int TestRead(const char* filename, unsigned char*** imageData, unsigned int* width, unsigned int* height)
+{
+	FILE* imgFile = fopen(filename, "rb");
+	if (imgFile == NULL)
+	{
+		return FOPEN_FAILED;
+	}
+
+	png_byte buffer[256];
+
+	fread(buffer, 1, 8, imgFile);
+
+	if (png_sig_cmp(buffer, 0, 8))
+	{
+		return FORMAT_ERROR_NOT_PNG;
+	}
+
+	char user_error_ptr[256];
+
+	png_structp png_ptr = png_create_read_struct(
+		PNG_LIBPNG_VER_STRING,
+		(png_voidp)user_error_ptr,
+		NULL,
+		NULL
+	);
+
+	if (png_ptr == NULL)
+	{
+		return PNG_INITIALIZATION_FAILED;
+	}
+
+	png_infop info_ptr = png_create_info_struct(png_ptr);
+
+	if (info_ptr == NULL)
+	{
+		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+		return PNG_INITIALIZATION_FAILED;
+	}
+
+	png_infop end_info = png_create_info_struct(png_ptr);
+
+	if (end_info == NULL)
+	{
+		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+		return PNG_INITIALIZATION_FAILED;
+	}
+
+	if (setjmp(png_jmpbuf(png_ptr)))
+	{
+		png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+		fclose(imgFile);
+		return PNG_READING_ERROR;
+	}
+
+	png_init_io(png_ptr, imgFile);
+	png_set_sig_bytes(png_ptr, 8);
+
+	png_read_info(png_ptr, info_ptr);
+
+	*width = png_get_image_width(png_ptr, info_ptr);
+	*height = png_get_image_height(png_ptr, info_ptr);
+	int bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+	int color_type = png_get_color_type(png_ptr, info_ptr);
+	int filter_method = png_get_filter_type(png_ptr, info_ptr);
+	int compression_type = png_get_compression_type(png_ptr, info_ptr);
+	int interlace_type = png_get_interlace_type(png_ptr, info_ptr);
+
+	int channels = channels = png_get_channels(png_ptr, info_ptr);
+	int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+
+	if (color_type & PNG_COLOR_MASK_ALPHA)
+	{
+		png_set_strip_alpha(png_ptr);
+	}
+
+	*imageData = new png_bytep[(*height)];
+	for (int i = 0; i < (*height); i++)
+	{
+		(*imageData)[i] = new png_byte[((*width) * 3)]; // ((*width) * 3 == rowbytes)
+	}
+
+	png_read_rows(png_ptr, (png_bytep*)(*imageData), NULL, (*height));
+
+	png_read_end(png_ptr, end_info);
+	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+
+	fclose(imgFile);
+
+	return SUCCESS;
+}
+
 int main()
 {
+	/*
+	void ** img1 = NULL;
+	unsigned int width1;
+	unsigned int height1;
+
+	void ** img2 = NULL;
+	unsigned int width2;
+	unsigned int height2;
+
+	PngWorker::Read("Visualization\\RectangularGrid\\player_1_static_agent.png", &img1, &width1, &height1);
+	PngWorker::Read("Visualization\\RectangularGrid\\player_2_drone.png", &img2, &width2, &height2);
+
+	PngWorker::WriteOpen("test.png", width1 + width2, height1);
+
+	unsigned char* row = new unsigned char[(width1 + width1) * 3];
+
+	for (int i = 0; i < height1; i++)
+	{
+		memcpy(row, img1[i], width1 * 3);
+		memcpy(row + (width1 * 3), img2[i], width2 * 3);
+		PngWorker::WriteRow(row);
+	}
+
+	PngWorker::WriteEnd();
+
+	for (int i = 0; i < height1; i++)
+	{
+		delete[] img1[i];
+	}
+
+	delete[] img1;
+
+	for (int i = 0; i < height2; i++)
+	{
+		delete[] img2[i];
+	}
+
+	delete[] img2;
+
+	return 0;
+	*/
+
 	Network<Pos, Agent, DoNeighbor, int, CalculateDistance, PosComp> network;
 	
-	const int player1AgentsNumber = 8;
-	const int player2AgentsNumber = 8;
+	const int player1AgentsNumber = 13;
+	const int player2AgentsNumber = 17;
 
 	int player1Pos[player1AgentsNumber][2] = {
 		/*
@@ -109,9 +245,11 @@ int main()
 		{2,3},{2,4},{3,4},
 		{4,4},{4,3},{4,2},{5,2}
 		*/
-		{2,1},{2,2},{3,2},
-		{3,3},{4,2},{4,3},
-		{5,3},{6,3}
+		{2,3},{2,4},{2,5},
+		{2,6},{2,7},{2,8},
+		{2,9},{2,10},{3,10},
+		{4,10},{4,9},{4,8},
+		{4,7}
 	};
 
 	int player2Pos[player2AgentsNumber][2] = {
@@ -121,9 +259,12 @@ int main()
 		{4,2},{5,2},{6,2},
 		{7,2},{8,2}
 		*/
-		{1,4},{1,5},{2,5},
-		{3,5},{3,6},{4,5},
-		{4,4},{4,3}
+		{5,3},{6,3},{7,3},
+		{8,3},{9,3},{10,3},
+		{11,3},{11,4},{11,5},
+		{10,5},{9,5},{8,5},
+		{7,5},{6,5},{5,5},
+		{4,5},{3,5}
 	};
 
 	Agent ** player1Agents = new Agent*[player1AgentsNumber];
@@ -364,8 +505,24 @@ int main()
 
 	outfile.close();
 
+	vector<vector<pair<int, int>>> drones;
+	drones.resize(2);
+	drones[0].push_back(make_pair(player1Drone->position.i, player1Drone->position.j));
+	drones[1].push_back(make_pair(player2Drone->position.i, player2Drone->position.j));
+
 	delete player1Drone;
 	delete player2Drone;
+
+	vector<vector<pair<int, int>>> staticAgents;
+	staticAgents.resize(2);
+	for (int i = 0; i < player1AgentsNumber; i++)
+	{
+		staticAgents[0].push_back(make_pair(player1Agents[i]->position.i, player1Agents[i]->position.j));
+	}
+	for (int i = 0; i < player2AgentsNumber; i++)
+	{
+		staticAgents[1].push_back(make_pair(player2Agents[i]->position.i, player2Agents[i]->position.j));
+	}
 
 	for (int i = 0; i < player1AgentsNumber; i++)
 	{
@@ -382,12 +539,38 @@ int main()
 	delete[] player1Agents;
 	delete[] player2Agents;
 
-	cout << "(" << solution.first.i << ", " << solution.first.j << ") (" <<
-		solution.second.i << ", " << solution.second.j << ")" << endl;
+	GraphVisualizer::RectangularGridTemplates templates(2);
 
-	cout << "Press Enter to quit...";
+	string imgsFolder = "Visualization\\RectangularGrid\\";
 
-	fgetc( stdin );
+	templates.gridCross = imgsFolder + "grid_cross.png";
+	templates.gridCrossX0 = imgsFolder + "grid_cross_x0.png";
+	templates.gridCrossY0 = imgsFolder + "grid_cross_y0.png";
+	templates.gridCrossZero = imgsFolder + "grid_cross_zero.png";
+	templates.gridArrowXAxis = imgsFolder + "grid_arrow_x_axis.png";
+	templates.gridArrowYAxis = imgsFolder + "grid_arrow_y_axis.png";
+	templates.gridEmpty = imgsFolder + "grid_empty.png";
+
+	templates.playersCount = 2;
+
+	for (int i = 0; i < templates.playersCount; i++)
+	{
+		templates.staticAgents[i] = imgsFolder + "player_" + ((char)(i + 1 + '0')) + "_static_agent.png";
+		templates.drones[i] = imgsFolder + "player_" + ((char)(i + 1 + '0')) + "_drone.png";
+	}
+
+	for (int i = 0; i < 10; i++)
+	{
+		templates.digits[i] = imgsFolder + "digit_" + ((char)(i + '0')) + ".png";
+	}
+
+	GraphVisualizer::DrawGraphRectangularGrid(
+		"result.png",
+		templates,
+		2,
+		staticAgents,
+		drones
+	);
 	
 	return 0;
 }

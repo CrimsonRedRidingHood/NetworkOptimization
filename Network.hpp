@@ -1,12 +1,13 @@
 #pragma once
 
-#ifndef MANET_PROJECT_NETWORK_HEADER_DEFINED
-#define MANET_PROJECT_NETWORK_HEADER_DEFINED
+#ifndef MANET_PROJECT_NETWORK_HEADER_DEF
+#define MANET_PROJECT_NETWORK_HEADER_DEF
 
 #include <map>
 #include <set>
 #include <functional>
 #include <queue>
+#include <iomanip>
 
 using namespace std;
 
@@ -87,7 +88,7 @@ private:
 	class NetworkAgentDataComparator
 	{
 	public:
-		bool operator()(NetworkAgentData* lhs, NetworkAgentData* rhs)
+		bool operator()(NetworkAgentData* lhs, NetworkAgentData* rhs) const
 		{
 			/*
 				This is an absolutely awesome way to
@@ -95,7 +96,7 @@ private:
 				since we may have two agents with absolutely
 				identical properties and location (position),
 				but we may never have two identical agent
-				pointers direct to different agents
+				pointers directing to different agents
 			*/
 			return ((int)lhs->agent) < ((int)rhs->agent);
 		}
@@ -807,6 +808,9 @@ public:
 		buffer.resize(subgraphsize);
 	}
 
+	/*
+	 * !Requires the graph to be connected (Due to current nature of BFS)
+	 */
 	vector<pair<TAgent*, double>> GetPageRank(function<bool(TAgent)> filter, function<bool(TAgent)> findFirstFilter)
 	{
 		vector<pair<TAgent*, double>> result;
@@ -931,4 +935,4 @@ public:
 	Network() {}
 };
 
-#endif /* MANET_PROJECT_NETWORK_HEADER_DEFINED */
+#endif /* MANET_PROJECT_NETWORK_HEADER_DEF */

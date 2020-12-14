@@ -18,3 +18,6 @@ The most recent research done by [1](#dev-1) does the same stuff calculating col
 
 ### Researchers and Developers
 <a name="dev-1">[1]</a> Sergey K., student at Saint-Petersburg State University (SPbSU), Saint-Petersburg, Russia. ssnnp@mail.ru, st054625@student.spbu.ru
+
+## Project requirements
+This project requires <strong>libpng</strong> and <strong>zlib</strong> to run properly. Those libraries are responsible for creating PNG images for visualization of the final results.

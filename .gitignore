@@ -386,9 +386,12 @@ MigrationBackup/
 
 # End of https://www.gitignore.io/api/c++,visualstudio
 
-*.vcxproj*
-*.sln
-
 # output files
 
 output.txt
+
+# .png files
+
+result.png
+
+Libs/
