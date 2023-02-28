@@ -10,8 +10,6 @@
 
 using namespace std;
 
-#define SUCCESS 0
-
 class PngWorker
 {
 private:
@@ -35,6 +33,14 @@ public:
 		//cout << "write_row_callback() has been called" << endl;
 	}
 
+	/*
+	* static int Read(const char * filename, void *** imageData, unsigned int * width, unsigned int * height) -
+	*	reads PNG file - used in order to load image blocks that the resulting image is built of
+	* 
+	* Parameters:
+	*	[in] const char * filename - relative path to the resulting image file
+	*	[out] void *** imageData
+	*/
 	static int Read(const char * filename, void *** imageData, unsigned int * width, unsigned int * height)
 	{
 		FILE* imgFile = fopen(filename, "rb");
@@ -113,7 +119,7 @@ public:
 			png_set_strip_16(png_ptr);
 		}
 
-		int channels = channels = png_get_channels(png_ptr, info_ptr);
+		int channels = png_get_channels(png_ptr, info_ptr);
 		int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
 		*imageData = (void**) new png_bytep[(*height)];
@@ -312,6 +318,19 @@ public:
 		}
 	}
 
+	static void ImageDataCleanup(ImageData& imdata)
+	{
+		for (int i = 0; i < imdata.height; i++)
+		{
+			delete[] imdata.data[i];
+		}
+
+		delete[] imdata.data;
+	}
+
+	/*
+	* TODO: Add proper ImageData cleanup
+	*/
 	static void DrawGraphRectangularGrid(
 		const char* outFileName,
 		RectangularGridTemplates& templates,
@@ -332,9 +351,10 @@ public:
 		ImageData* staticAgents = new ImageData[playersCount];
 		ImageData* drones = new ImageData[playersCount];
 
+		// loading templates
 		for (int i = 0; i < 10; i++)
 		{
-			PngWorker::Read(templates.digits[0].c_str(), &digits[0].data, &digits[0].width, &digits[0].height);
+			PngWorker::Read(templates.digits[i].c_str(), &digits[i].data, &digits[i].width, &digits[i].height);
 		}
 
 		PngWorker::Read(templates.gridArrowYAxis.c_str(), &gridArrowYAxis.data, &gridArrowYAxis.width, &gridArrowYAxis.height);
@@ -462,6 +482,31 @@ public:
 		}
 
 		PngWorker::WriteEnd();
+
+		// cleanup
+		for (int i = 0; i < playersCount; i++)
+		{
+			ImageDataCleanup(staticAgents[i]);
+			ImageDataCleanup(drones[i]);
+		}
+
+		ImageDataCleanup(gridArrowYAxis);
+		ImageDataCleanup(gridCross);
+		ImageDataCleanup(gridCrossX0);
+		ImageDataCleanup(gridCrossY0);
+		ImageDataCleanup(gridCrossZero);
+		ImageDataCleanup(gridArrowXAxis);
+		ImageDataCleanup(gridEmpty);
+
+		for (int i = 0; i < 10; i++)
+		{
+			ImageDataCleanup(digits[i]);
+		}
+
+		delete[] staticAgents;
+		delete[] drones;
+
+		delete[] digits;
 	}
 };
 

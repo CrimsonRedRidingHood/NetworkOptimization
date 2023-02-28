@@ -22,7 +22,7 @@
     <ProjectGuid>{2C5EBD06-750C-4777-AD36-CB14CE7B1A73}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>MANETDrones</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -157,11 +157,13 @@
     <ClCompile Include="Entry.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Geometry.hpp" />
     <ClInclude Include="ManetDefs.h" />
     <ClInclude Include="Network.hpp" />
     <ClInclude Include="Visualization.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="input.txt" />
     <Text Include="output.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

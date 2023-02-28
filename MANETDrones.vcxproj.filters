@@ -29,9 +29,15 @@
     <ClInclude Include="ManetDefs.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Geometry.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="output.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="input.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

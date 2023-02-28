@@ -27,7 +27,7 @@ using namespace std;
 	some way, and false otherwise.
 
 	Measure represents a type of data used to calculate
-	distances on the network. And CalculateDistance must
+	distances on the network. And DistanceCalculator must
 	be a struct or a class that overrides an invocation
 	operator so that it takes 2 TAgents and returns a
 	value of type Measure, indicating distance between
@@ -38,7 +38,7 @@ template <
 	class TAgent,
 	typename DoNeighbor,
 	class Measure,
-	typename CalculateDistance,
+	typename DistanceCalculator,
 	typename Compare = less< TPosition >
 >
 class Network
@@ -706,7 +706,7 @@ public:
 				}
 				// now we're sure that currentNeighbor has an index mapped to it
 				
-				CalculateDistance distanceCalculator;
+				DistanceCalculator distanceCalculator;
 
 				dp[agentsToIndicesMapping[current]][agentsToIndicesMapping[currentNeighbor]] =
 					distanceCalculator(*(current->agent), *(currentNeighbor->agent));

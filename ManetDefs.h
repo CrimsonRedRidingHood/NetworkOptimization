@@ -3,7 +3,16 @@
 #ifndef MANET_PROJECT_MAIN_DEFS_HEADER_DEF
 #define MANET_PROJECT_MAIN_DEFS_HEADER_DEF
 
+// Standard success error code (0)
+#define SUCCESS 0
+
+// General fopen failure
 #define FOPEN_FAILED 0x00010001
+
+/*
+* Error codes related to PNG image creation
+*/
+
 #define FORMAT_ERROR_NOT_PNG 0x00020001
 #define FORMAT_ERROR_NO_ALPHA 0x00020002
 #define PNG_INITIALIZATION_FAILED 0x00030001
